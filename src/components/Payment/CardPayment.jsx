@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+// src/components/Payment/CardPayment.jsx
+import { useState } from "react";
+import { toast } from "react-toastify";
 
 export default function CardPayment({ setPaymentData }) {
   const [name, setName] = useState("");
@@ -27,74 +29,64 @@ export default function CardPayment({ setPaymentData }) {
     setCvv(value);
   };
 
-  useEffect(() => {
-    setError("");
+  const validateCard = () => {
     const cardDigits = cardNumber.replace(/\s/g, "");
     const expiryRegex = /^(\d{2})\/(\d{2})$/;
     const match = expiry.match(expiryRegex);
-
     const [month, year] = match ? [parseInt(match[1], 10), parseInt(match[2], 10)] : [null, null];
     const currentYear = new Date().getFullYear() % 100;
     const currentMonth = new Date().getMonth() + 1;
 
-    if (!name.trim()) setError("Name is required");
-    else if (cardDigits.length !== 16) setError("Card number must be 16 digits");
-    else if (!match || month < 1 || month > 12) setError("Invalid expiry date");
-    else if (year < currentYear || (year === currentYear && month < currentMonth))
-      setError("Card is expired");
-    else if (cvv.length < 3 || cvv.length > 4) setError("CVV must be 3 or 4 digits");
-    else {
-      setError("");
-      setPaymentData({ name, cardNumber: cardDigits, expiry, cvv });
+    if (!name.trim()) return "Name is required";
+    if (cardDigits.length !== 16) return "Card number must be 16 digits";
+    if (!match || month < 1 || month > 12) return "Invalid expiry date";
+    if (year < currentYear || (year === currentYear && month < currentMonth)) return "Card is expired";
+    if (cvv.length < 3 || cvv.length > 4) return "CVV must be 3 or 4 digits";
+
+    return "";
+  };
+
+  const handleSave = async () => {
+    const validationError = validateCard();
+    if (validationError) {
+      setError(validationError);
+      setPaymentData(null);
       return;
     }
 
-    setPaymentData(null);
-  }, [name, cardNumber, expiry, cvv, setPaymentData]);
+    setError("");
+    const paymentInfo = { method: "card", name, cardNumber: cardNumber.replace(/\s/g, ""), expiry, cvv };
+    setPaymentData(paymentInfo);
+
+    try {
+      const res = await fetch("http://localhost:5000/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentInfo),
+      });
+
+      if (!res.ok) throw new Error("Failed to save payment");
+      toast.success("Payment info saved successfully!");
+    } catch {
+      toast.error("Failed to save payment info!");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4 border p-4 rounded-lg">
       {error && <p className="text-red-600 font-medium">{error}</p>}
 
-      <input
-        type="text"
-        placeholder="Name on Card"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="border p-2 rounded"
-        aria-label="Name on Card"
-      />
-
-      <input
-        type="text"
-        placeholder="Card Number (16 digits)"
-        value={cardNumber}
-        onChange={handleCardNumberChange}
-        className="border p-2 rounded"
-        maxLength={19}
-        aria-label="Card Number"
-      />
-
+      <input type="text" placeholder="Name on Card" value={name} onChange={(e) => setName(e.target.value)} className="border p-2 rounded" />
+      <input type="text" placeholder="Card Number (16 digits)" value={cardNumber} onChange={handleCardNumberChange} className="border p-2 rounded" maxLength={19} />
+      
       <div className="flex gap-4">
-        <input
-          type="text"
-          placeholder="MM/YY"
-          value={expiry}
-          onChange={handleExpiryChange}
-          className="border p-2 rounded w-1/2"
-          maxLength={5}
-          aria-label="Expiry Date"
-        />
-        <input
-          type="password"
-          placeholder="CVV"
-          value={cvv}
-          onChange={handleCvvChange}
-          className="border p-2 rounded w-1/2"
-          maxLength={4}
-          aria-label="CVV"
-        />
+        <input type="text" placeholder="MM/YY" value={expiry} onChange={handleExpiryChange} className="border p-2 rounded w-1/2" maxLength={5} />
+        <input type="password" placeholder="CVV" value={cvv} onChange={handleCvvChange} className="border p-2 rounded w-1/2" maxLength={4} />
       </div>
+
+      <button onClick={handleSave} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+        Save Card
+      </button>
     </div>
   );
 }

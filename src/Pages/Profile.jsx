@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
 
 export default function Profile() {
-  const { currentUser, setCurrentUser } = useContext(UserContext);
+  const { currentUser, setCurrentUser, logout } = useContext(UserContext);
   const navigate = useNavigate();
   const [joinedDate, setJoinedDate] = useState("");
 
-  // Set join date on first load
+  // Set join date on first load (and sync with backend)
   useEffect(() => {
     if (!currentUser) return;
 
@@ -16,6 +16,14 @@ export default function Profile() {
       const updatedUser = { ...currentUser, joinDate: new Date().toISOString() };
       setCurrentUser(updatedUser);
       localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+
+      // ✅ Sync with JSON server
+      fetch(`http://localhost:5000/users/${currentUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ joinDate: updatedUser.joinDate }),
+      }).catch(err => console.error("Failed to update joinDate", err));
+
       setJoinedDate(new Date(updatedUser.joinDate).toLocaleDateString());
     } else {
       setJoinedDate(new Date(currentUser.joinDate).toLocaleDateString());
@@ -37,12 +45,6 @@ export default function Profile() {
   }
 
   const firstLetter = currentUser.name ? currentUser.name[0].toUpperCase() : "?";
-
-  const handleLogout = () => {
-    localStorage.removeItem("currentUser");
-    setCurrentUser(null);
-    navigate("/");
-  };
 
   return (
     <section className="max-w-lg mx-auto px-6 py-12 bg-white shadow-lg rounded-lg">
@@ -66,7 +68,10 @@ export default function Profile() {
           </button>
 
           <button
-            onClick={handleLogout}
+            onClick={() => {
+              logout(); // ✅ use context logout
+              navigate("/");
+            }}
             className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600"
           >
             Logout

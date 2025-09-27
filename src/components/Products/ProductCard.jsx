@@ -44,7 +44,13 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg overflow-hidden hover:scale-105 transform transition duration-300 cursor-pointer">
+    <div className="bg-white shadow-md rounded-lg overflow-hidden hover:scale-105 transform transition duration-300 cursor-pointer relative">
+      {product.premium && (
+        <span className="absolute top-2 left-2 bg-yellow-400 text-black px-2 py-1 text-xs font-bold rounded">
+          PREMIUM
+        </span>
+      )}
+
       <img
         src={product.image}
         alt={product.name}
@@ -65,7 +71,9 @@ export default function ProductCard({ product }) {
             onClick={handleCart}
             disabled={isOutOfStock}
             className={`px-3 py-1 rounded-md transition ${
-              inCart ? "bg-red-500 text-white hover:bg-red-600" : "bg-green-400 text-black hover:bg-green-500"
+              inCart
+                ? "bg-red-500 text-white hover:bg-red-600"
+                : "bg-green-400 text-black hover:bg-green-500"
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {inCart ? "Remove from Cart" : "Add to Cart"}
@@ -77,7 +85,9 @@ export default function ProductCard({ product }) {
               inWishlist ? "text-red-900" : "text-pink-600 hover:text-pink-800"
             }`}
           >
-            <Heart className={`w-6 h-6 ${inWishlist ? "text-red-500 fill-current" : "text-pink-600"}`} />
+            <Heart
+              className={`w-6 h-6 ${inWishlist ? "text-red-500 fill-current" : "text-pink-600"}`}
+            />
           </button>
         </div>
       </div>

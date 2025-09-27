@@ -47,35 +47,50 @@ export default function ProductDetails() {
   const inCart = currentUser?.cart?.some(item => item.id === product.id);
   const inWishlist = currentUser?.wishlist?.some(item => item.id === product.id);
 
- const handleCartToggle = async () => {
-  if (!currentUser) return navigate("/login");
-  if (product.stock === 0) return toast.error("Out of stock!");
-
-  setLoading(true);
-  try {
-    if (inCart) {
-      // Pass the product ID, not full object
-      await removeFromCart(product.id);
-      toast.info("Removed from cart!");
-      // Increase stock since removed
-      setProduct(prev => ({ ...prev, stock: prev.stock + 1 }));
-    } else {
-      await addToCart(product);
-      toast.success("Added to cart!");
-      // Decrease stock since added
-      setProduct(prev => ({ ...prev, stock: prev.stock - 1 }));
+  // Update stock in backend
+  const updateStock = async (newStock) => {
+    try {
+      await fetch(`http://localhost:5000/products/${product.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stock: newStock }),
+      });
+    } catch (err) {
+      console.error("Stock update failed", err);
     }
-  } catch (err) {
-    toast.error("Operation failed.");
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  const handleCartToggle = async () => {
+    if (!currentUser) return navigate("/login");
+    if (product.stock === 0) return toast.error("Out of stock!");
+
+    setLoading(true);
+    try {
+      if (inCart) {
+        await removeFromCart(product.id);
+        toast.info("Removed from cart!");
+        setProduct(prev => ({ ...prev, stock: prev.stock + 1 }));
+        await updateStock(product.stock + 1);
+      } else {
+        await addToCart(product);
+        toast.success("Added to cart!");
+        setProduct(prev => ({ ...prev, stock: prev.stock - 1 }));
+        await updateStock(product.stock - 1);
+      }
+    } catch (err) {
+      toast.error("Operation failed.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBuyNow = async () => {
     if (!currentUser) return navigate("/login");
-    if (!inCart) await addToCart(product);
+    if (!inCart) {
+      await addToCart(product);
+      await updateStock(product.stock - 1);
+    }
     navigate("/payment");
   };
 

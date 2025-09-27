@@ -1,27 +1,26 @@
 // src/components/Navbar.jsx
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext } from "react";
 import { ShoppingCart, User, Menu, X, Heart } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-  const [wishlistCount, setWishlistCount] = useState(0);
-
   const { currentUser, logout } = useContext(UserContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Update cart/wishlist counts when currentUser changes
-  useEffect(() => {
-    setCartCount(currentUser?.cart?.length || 0);
-    setWishlistCount(currentUser?.wishlist?.length || 0);
-  }, [currentUser]);
+  // Cart & Wishlist counts derived directly from currentUser
+  const cartCount = currentUser?.cart?.length || 0;
+  const wishlistCount = currentUser?.wishlist?.length || 0;
 
   const handleLogout = () => {
-    logout(); // ✅ Properly clear state + localStorage
+    logout(); // Clear state + localStorage
     navigate("/login");
   };
+
+  // Helper to highlight active links
+  const isActive = (path) => location.pathname === path;
 
   return (
     <nav className="bg-white sticky top-0 z-50 shadow-md">
@@ -37,13 +36,29 @@ export default function Navbar() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-6 text-black font-medium">
-            <Link to="/" className="hover:text-green-400">Home</Link>
-            <Link to="/shops" className="hover:text-green-400">Shops</Link>
-            <Link to="/orders" className="hover:text-green-400">Orders</Link>
+            <Link
+              to="/"
+              className={`hover:text-green-400 ${isActive("/") ? "font-bold text-green-500" : ""}`}
+            >
+              Home
+            </Link>
+            <Link
+              to="/shops"
+              className={`hover:text-green-400 ${isActive("/shops") ? "font-bold text-green-500" : ""}`}
+            >
+              Shops
+            </Link>
+            <Link
+              to="/orders"
+              className={`hover:text-green-400 ${isActive("/orders") ? "font-bold text-green-500" : ""}`}
+            >
+              Orders
+            </Link>
           </div>
 
           {/* Icons & User */}
           <div className="flex items-center space-x-4">
+            {/* Cart Icon */}
             <div onClick={() => navigate("/cart")} className="relative cursor-pointer">
               <ShoppingCart className="w-6 h-6" />
               {cartCount > 0 && (
@@ -53,6 +68,7 @@ export default function Navbar() {
               )}
             </div>
 
+            {/* Wishlist Icon */}
             <div onClick={() => navigate("/wishlist")} className="relative cursor-pointer">
               <Heart className="w-6 h-6" />
               {wishlistCount > 0 && (
@@ -62,6 +78,7 @@ export default function Navbar() {
               )}
             </div>
 
+            {/* User / Login */}
             {currentUser ? (
               <div className="flex items-center space-x-3">
                 <button
@@ -98,10 +115,25 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden bg-amber-700 text-white px-4 pb-4 space-y-2">
-          <Link to="/" className="block hover:text-yellow-300">Home</Link>
-          <Link to="/shops" className="block hover:text-yellow-300">Shops</Link>
-          <Link to="/orders" className="block hover:text-yellow-300">Orders</Link>
+        <div className="md:hidden bg-white shadow-md text-black px-4 pb-4 space-y-2">
+          <Link
+            to="/"
+            className={`block hover:text-green-400 ${isActive("/") ? "font-bold text-green-500" : ""}`}
+          >
+            Home
+          </Link>
+          <Link
+            to="/shops"
+            className={`block hover:text-green-400 ${isActive("/shops") ? "font-bold text-green-500" : ""}`}
+          >
+            Shops
+          </Link>
+          <Link
+            to="/orders"
+            className={`block hover:text-green-400 ${isActive("/orders") ? "font-bold text-green-500" : ""}`}
+          >
+            Orders
+          </Link>
         </div>
       )}
     </nav>

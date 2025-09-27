@@ -8,6 +8,7 @@ import { getPageItems, getTotalPages } from "../helpers/paginationHelpers";
 export default function Shops() {
   const { currentUser } = useContext(UserContext);
   const [products, setProducts] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [premiumFilter, setPremiumFilter] = useState("all");
@@ -16,7 +17,7 @@ export default function Shops() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 10;
 
-  // Fetch all products from server
+  // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -30,33 +31,53 @@ export default function Shops() {
     fetchProducts();
   }, []);
 
-  // Filter, sort, search, and update stock based on user's cart
+  // Fetch cart for current user
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchCart = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/cart?userId=${currentUser.id}`);
+        const data = await res.json();
+        setCartItems(data);
+      } catch (err) {
+        console.error("Error fetching cart:", err);
+      }
+    };
+    fetchCart();
+  }, [currentUser]);
+
+  // Apply filters, search, and stock adjustment
   useEffect(() => {
     let temp = [...products];
 
     // Search by name
-    if (searchQuery.trim())
+    if (searchQuery.trim()) {
       temp = temp.filter((p) =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
+    }
 
-    // Filter by category
-    if (categoryFilter !== "all") temp = temp.filter((p) => p.category === categoryFilter);
+    // Category filter
+    if (categoryFilter !== "all") {
+      temp = temp.filter((p) => p.category === categoryFilter);
+    }
 
-    // Filter by premium
-    if (premiumFilter !== "all")
+    // Premium filter
+    if (premiumFilter !== "all") {
       temp = temp.filter((p) =>
         premiumFilter === "premium" ? p.premium : !p.premium
       );
+    }
 
     // Sort by price
     if (sortOrder === "low") temp.sort((a, b) => a.price - b.price);
     if (sortOrder === "high") temp.sort((a, b) => b.price - a.price);
 
-    // Update stock based on current user's cart
-    if (currentUser?.cart?.length) {
+    // Update stock based on server cart
+    if (cartItems.length) {
       temp = temp.map((p) => {
-        const cartItem = currentUser.cart.find((i) => i.id === p.id);
+        const cartItem = cartItems.find((i) => i.productId === p.id);
         const updatedStock = cartItem ? Math.max(p.stock - cartItem.qty, 0) : p.stock;
         return { ...p, stock: updatedStock };
       });
@@ -64,7 +85,7 @@ export default function Shops() {
 
     setFilteredProducts(temp);
     setCurrentPage(1);
-  }, [products, searchQuery, categoryFilter, premiumFilter, sortOrder, currentUser]);
+  }, [products, searchQuery, categoryFilter, premiumFilter, sortOrder, cartItems]);
 
   const currentProducts = getPageItems(filteredProducts, currentPage, productsPerPage);
   const totalPages = getTotalPages(filteredProducts, productsPerPage);
@@ -116,9 +137,7 @@ export default function Shops() {
           ))}
         </div>
       ) : (
-        <p className="text-center text-gray-500 mt-10 text-lg">
-          🚫 Product not found
-        </p>
+        <p className="text-center text-gray-500 mt-10 text-lg">🚫 Product not found</p>
       )}
 
       {/* Pagination */}

@@ -2,37 +2,46 @@
 import { useEffect, useState, useContext } from "react";
 import ProductCard from "./ProductCard";
 import { UserContext } from "../../context/UserContext";
-import Alert from "../Alert"; // optional alert component
 
 export default function PremiumProducts() {
   const [products, setProducts] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { currentUser } = useContext(UserContext);
 
   useEffect(() => {
-    // Fetch premium products
+    const controller = new AbortController();
+
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://localhost:5000/products?premium=true");
+        const res = await fetch("http://localhost:5000/products?premium=true", {
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error("Failed to fetch products");
         const data = await res.json();
         setProducts(data);
       } catch (err) {
-        console.error("Error fetching premium products:", err);
-        showAlert("Failed to load premium products");
+        if (err.name !== "AbortError") {
+          console.error("Error fetching premium products:", err);
+          showAlert("Failed to load premium products");
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchProducts();
+
+    return () => controller.abort(); // cleanup on unmount
   }, []);
 
-  // ✅ Show alert at top of page
+  // Show alert at top of page
   const showAlert = (message) => {
     const id = Date.now();
     setAlerts((prev) => [...prev, { id, message }]);
     setTimeout(() => {
       setAlerts((prev) => prev.filter((alert) => alert.id !== id));
-    }, 3000); // hide after 3s
+    }, 3000);
   };
 
   return (
@@ -51,16 +60,26 @@ export default function PremiumProducts() {
 
       <h2 className="text-3xl font-bold mb-6 text-center">Premium Products</h2>
 
-      {/* Product List */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            showAlert={showAlert} // only for alerts
-          />
-        ))}
-      </div>
+      {/* Loading, empty state, or product list */}
+      {loading ? (
+        <p className="text-center text-gray-500 mt-10 text-lg">
+          Loading premium products...
+        </p>
+      ) : products.length === 0 ? (
+        <p className="text-center text-gray-500 mt-10 text-lg">
+          No premium products available.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              showAlert={showAlert}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -1,26 +1,21 @@
 // src/context/UserContext.jsx
 import { createContext, useState, useEffect } from "react";
+import axios from "axios";
 
 export const UserContext = createContext();
+const API_URL = "http://localhost:5000";
 
 export function UserProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     const storedUser = localStorage.getItem("currentUser");
-    return storedUser ? JSON.parse(storedUser) : null; // ⚡ default is null
+    return storedUser ? JSON.parse(storedUser) : null;
   });
 
+  // Sync localStorage
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem("currentUser");
-    }
+    if (currentUser) localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    else localStorage.removeItem("currentUser");
   }, [currentUser]);
-
-  // Helper to update user
-  const updateUser = (updates) => {
-    setCurrentUser((prev) => ({ ...prev, ...updates }));
-  };
 
   // ---------------- LOGOUT ----------------
   const logout = () => {
@@ -29,84 +24,79 @@ export function UserProvider({ children }) {
   };
 
   // ---------------- CART ----------------
-  const addToCart = (product) => {
+  const addToCart = async (product) => {
     if (!currentUser) return;
+
     const exists = currentUser.cart?.some((i) => i.id === product.id);
-    if (!exists) {
-      updateUser({ cart: [...(currentUser.cart || []), { ...product, qty: 1 }] });
-    }
+    const newCart = exists ? currentUser.cart : [...(currentUser.cart || []), { ...product, qty: 1 }];
+
+    // Update both /users and /carts
+    await axios.patch(`${API_URL}/users/${currentUser.id}`, { cart: newCart });
+    await axios.patch(`${API_URL}/carts/${currentUser.id}`, { items: newCart });
+
+    setCurrentUser({ ...currentUser, cart: newCart });
   };
 
-  const removeFromCart = (productId) => {
+  const removeFromCart = async (productId) => {
     if (!currentUser) return;
-    updateUser({ cart: currentUser.cart.filter((item) => item.id !== productId) });
+    const newCart = currentUser.cart.filter((item) => item.id !== productId);
+
+    await axios.patch(`${API_URL}/users/${currentUser.id}`, { cart: newCart });
+    await axios.patch(`${API_URL}/carts/${currentUser.id}`, { items: newCart });
+
+    setCurrentUser({ ...currentUser, cart: newCart });
   };
 
-  const updateCartQty = (productId, qty) => {
+  const updateCartQty = async (productId, qty) => {
     if (!currentUser) return;
-    updateUser({
-      cart: currentUser.cart.map((item) =>
-        item.id === productId ? { ...item, qty } : item
-      ),
-    });
+    const newCart = currentUser.cart.map((item) =>
+      item.id === productId ? { ...item, qty } : item
+    );
+
+    await axios.patch(`${API_URL}/users/${currentUser.id}`, { cart: newCart });
+    await axios.patch(`${API_URL}/carts/${currentUser.id}`, { items: newCart });
+
+    setCurrentUser({ ...currentUser, cart: newCart });
   };
 
   // ---------------- WISHLIST ----------------
-  const toggleWishlist = (product) => {
+  const toggleWishlist = async (product) => {
     if (!currentUser) return;
+
     const exists = currentUser.wishlist?.some((i) => i.id === product.id);
-    updateUser({
-      wishlist: exists
-        ? currentUser.wishlist.filter((i) => i.id !== product.id)
-        : [...(currentUser.wishlist || []), product],
-    });
+    const newWishlist = exists
+      ? currentUser.wishlist.filter((i) => i.id !== product.id)
+      : [...(currentUser.wishlist || []), product];
+
+    await axios.patch(`${API_URL}/users/${currentUser.id}`, { wishlist: newWishlist });
+    await axios.patch(`${API_URL}/wishlists/${currentUser.id}`, { items: newWishlist });
+
+    setCurrentUser({ ...currentUser, wishlist: newWishlist });
   };
 
   // ---------------- ORDERS ----------------
-  const addOrder = (order) => {
+  const addOrder = async (order) => {
     if (!currentUser) return;
-    updateUser({
-      orders: [...(currentUser.orders || []), { ...order, status: "placed" }],
-      cart: [], // clear cart
-      stock: reduceStock(currentUser.stock, order.items),
-    });
+
+    const newOrder = {
+      userId: currentUser.id,
+      items: order.items,
+      total: order.total,
+      status: "placed",
+      createdAt: new Date().toISOString(),
+    };
+
+    await axios.post(`${API_URL}/orders`, newOrder);
+
+    // Clear cart in /users and /carts
+    await axios.patch(`${API_URL}/users/${currentUser.id}`, { cart: [] });
+    await axios.patch(`${API_URL}/carts/${currentUser.id}`, { items: [] });
+
+    setCurrentUser({ ...currentUser, cart: [] });
   };
 
-  const cancelOrder = (orderId) => {
-    if (!currentUser) return;
-    const order = currentUser.orders.find((o) => o.id === orderId);
-
-    if (order && order.status !== "cancelled") {
-      const restoredStock = restoreStock(currentUser.stock, order.items);
-
-      updateUser({
-        orders: currentUser.orders.map((o) =>
-          o.id === orderId ? { ...o, status: "cancelled" } : o
-        ),
-        stock: restoredStock,
-      });
-    }
-  };
-
-  // ---------------- STOCK HELPERS ----------------
-  const reduceStock = (stock, items) => {
-    const newStock = { ...stock };
-    items.forEach((item) => {
-      if (newStock[item.id]) {
-        newStock[item.id] = Math.max(newStock[item.id] - (item.qty || 1), 0);
-      }
-    });
-    return newStock;
-  };
-
-  const restoreStock = (stock, items) => {
-    const newStock = { ...stock };
-    items.forEach((item) => {
-      if (newStock[item.id]) {
-        newStock[item.id] = newStock[item.id] + (item.qty || 1);
-      }
-    });
-    return newStock;
+  const cancelOrder = async (orderId) => {
+    await axios.patch(`${API_URL}/orders/${orderId}`, { status: "cancelled" });
   };
 
   return (
