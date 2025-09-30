@@ -15,6 +15,8 @@ import SignUp from "./Pages/SignUp";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OrdersPage from "./Pages/OrdersPage";
+import Footer from "./components/Footer";
+import NotFound from "./Pages/NotFound";
 
 
 
@@ -30,6 +32,7 @@ function App() {
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/shops" element={<Shops />} />
         <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
         <Route
           path="/cart"
           element={
@@ -89,6 +92,7 @@ function App() {
         pauseOnHover
         draggable
       />
+      <Footer />
     </Router>
   );
 }

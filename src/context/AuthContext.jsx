@@ -4,15 +4,15 @@ import { UserContext } from "./UserContext";
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }){
   const { setCurrentUser } = useContext(UserContext);
 
-  const login = (user) => {
-    setCurrentUser(user); // saves to localStorage in UserContext
+  function login(user){
+    setCurrentUser(user);
   };
 
-  const logout = () => {
-    setCurrentUser(null); // clears localStorage in UserContext
+  function logout(){
+    setCurrentUser(null);
   };
 
   return (
@@ -22,4 +22,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext);   //cutomm hook to call in components simple

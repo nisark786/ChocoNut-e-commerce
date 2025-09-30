@@ -1,10 +1,11 @@
 // src/helpers/paginationHelpers.js
 
-export const getPageItems = (items, currentPage, perPage) => {
-  const start = (currentPage - 1) * perPage;
-  return items.slice(start, start + perPage);
+export const getPageItems = (items, currentPage, itemsPerPage) => {
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  return items.slice(startIndex, endIndex);
 };
 
-export const getTotalPages = (items, perPage) => {
-  return Math.ceil(items.length / perPage);
+export const getTotalPages = (items, itemsPerPage) => {
+  return Math.ceil(items.length / itemsPerPage);
 };

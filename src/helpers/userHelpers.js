@@ -1,9 +1,8 @@
 // src/helpers/userHelpers.js
 
 // Check if user is logged in, optionally redirect
-export const requireLogin = (currentUser, navigate, showAlert) => {
+export const requireLogin = (currentUser, navigate) => {
   if (!currentUser) {
-    showAlert?.("Please login first!");
     navigate?.("/login");
     return false;
   }
