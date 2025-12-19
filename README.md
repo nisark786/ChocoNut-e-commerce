@@ -1,17 +1,54 @@
-# React + Vite
+# ChocoNut – Full-Featured E-Commerce Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ChocoNut is a scalable, role-based e-commerce frontend application built using
+React. The project includes both User and Admin modules with authentication,
+state management, dashboards, and CRUD operations.
 
-Currently, two official plugins are available:
+## Live Demo
+https://choco-nut-e-commerce.vercel.app
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech Stack
+- React.js (Vite)
+- Redux Toolkit
+- Tailwind CSS
+- JSON Server
+- Recharts
+- React Toastify
 
-## Expanding the ESLint configuration
+## Authentication & Security
+- Role-based routing (User/Admin)
+- Protected routes
+- Secure login, registration, and password change
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## User Module
+- Product browsing
+- Cart and Wishlist management
+- Order placement and order history
+- Payment UI flow
+- Profile management
+- Toast notifications for user actions
 
+## Admin Module
+- Dashboard with charts and metrics
+- Full CRUD operations (Products, Users, Orders)
+- Role-based access control
+- Admin-only routes
 
-need to updtate in productdetials page user experiences like feed back and rating 
-terms and condition sand
-change password in profle page
+## State Management
+- Centralized state using Redux Toolkit
+- Cart, auth, and order state handling
+
+## Styling & UI
+- Tailwind CSS for responsive design
+- Mobile-first layout
+- Reusable UI components
+
+## Development Setup
+git clone https://github.com/nisark786/ChocoNut-e-commerce
+
+cd ChocoNut-e-commerce
+
+npm install
+
+npm run dev
+
